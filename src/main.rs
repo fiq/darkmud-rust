@@ -2,6 +2,21 @@ use std::thread;
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::io::{Read, Write};
 
+fn game_loop(listener: &TcpListener) {
+    for incoming in listener.incoming() {
+        match incoming {
+            Ok(incoming) => {
+                println!("New connection: {}", incoming.peer_addr().unwrap());
+                thread::spawn(move|| {
+                    handle_incoming(incoming)
+                });
+            }
+            Err(e) => {
+                println!("Error: {}", e);
+            }
+        }
+    }
+}
 
 fn handle_incoming(mut incoming: TcpStream) {
     let mut data = [0 as u8; 50];
@@ -21,19 +36,9 @@ fn handle_incoming(mut incoming: TcpStream) {
 fn main() {
     println!("Hello, world!");
     let listener = TcpListener::bind("0.0.0.0:3333").unwrap();
+    while true {
+        game_loop(&listener);
+    }
 
-    for incoming in listener.incoming() {
-        match incoming {
-            Ok(incoming) => {
-                println!("New connection: {}", incoming.peer_addr().unwrap());
-                thread::spawn(move|| {
-                    handle_incoming(incoming)
-                });
-            }
-            Err(e) => {
-                println!("Error: {}", e);
-            }
-        }
-    }   
     drop(listener); // close
 }
